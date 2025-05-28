@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string>
-#include <climits>
+#include <limits>
 
 struct Node {
     int data;
@@ -9,7 +9,7 @@ struct Node {
     Node *left, *right, *parent;
 
     Node(int data)
-        : data(data), color("RED"), left(nullptr), right(nullptr), parent(nullptr) {}
+        : data(data), color("R"), left(nullptr), right(nullptr), parent(nullptr) {}
 };
 
 class RedBlackTree {
@@ -42,42 +42,42 @@ private:
     }
 
     void fixInsert(Node* k) {
-        while (k != root && k->parent->color == "RED") {
+        while (k != root && k->parent->color == "R") {
             if (k->parent == k->parent->parent->left) {
                 Node* u = k->parent->parent->right;
-                if (u->color == "RED") {
-                    k->parent->color = "BLACK";
-                    u->color = "BLACK";
-                    k->parent->parent->color = "RED";
+                if (u->color == "R") {
+                    k->parent->color = "N";
+                    u->color = "N";
+                    k->parent->parent->color = "R";
                     k = k->parent->parent;
                 } else {
                     if (k == k->parent->right) {
                         k = k->parent;
                         leftRotate(k);
                     }
-                    k->parent->color = "BLACK";
-                    k->parent->parent->color = "RED";
+                    k->parent->color = "N";
+                    k->parent->parent->color = "R";
                     rightRotate(k->parent->parent);
                 }
             } else {
                 Node* u = k->parent->parent->left;
-                if (u->color == "RED") {
-                    k->parent->color = "BLACK";
-                    u->color = "BLACK";
-                    k->parent->parent->color = "RED";
+                if (u->color == "R") {
+                    k->parent->color = "N";
+                    u->color = "N";
+                    k->parent->parent->color = "R";
                     k = k->parent->parent;
                 } else {
                     if (k == k->parent->left) {
                         k = k->parent;
                         rightRotate(k);
                     }
-                    k->parent->color = "BLACK";
-                    k->parent->parent->color = "RED";
+                    k->parent->color = "N";
+                    k->parent->parent->color = "R";
                     leftRotate(k->parent->parent);
                 }
             }
         }
-        root->color = "BLACK";
+        root->color = "N";
     }
 
     void inOrderHelper(Node* node, int depth, std::ostream& out) {
@@ -97,7 +97,7 @@ private:
 public:
     RedBlackTree() {
         NIL = new Node(0);
-        NIL->color = "BLACK";
+        NIL->color = "N";
         NIL->left = NIL->right = NIL;
         root = NIL;
     }
@@ -122,7 +122,7 @@ public:
         else parent->right = new_node;
 
         if (new_node->parent == nullptr) {
-            new_node->color = "BLACK";
+            new_node->color = "N";
             return;
         }
 
@@ -131,7 +131,7 @@ public:
         fixInsert(new_node);
     }
 
-    int findSuccessor(int x) {
+    double findSuccessor(int x) {
         Node* current = root;
         Node* successor = nullptr;
         while (current != NIL) {
@@ -142,7 +142,7 @@ public:
                 current = current->right;
             }
         }
-        return (successor != nullptr) ? successor->data : INT_MAX;
+        return (successor != nullptr) ? successor->data : std::numeric_limits<double>::infinity();
     }
 
     void printTreeWithDepthAndColor(std::ostream& out) {

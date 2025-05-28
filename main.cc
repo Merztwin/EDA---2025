@@ -7,7 +7,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <limits>
 
 //main
 int main(int argc, char** argv)
@@ -29,7 +28,7 @@ int main(int argc, char** argv)
 
 
     std::ofstream clearOut;
-    clearOut.open("out.txt", std::ofstream::out | std::ofstream::trunc);
+    clearOut.open("../out.txt", std::ofstream::out | std::ofstream::trunc);
     clearOut.close();
 
     while (getline(inputStream, line)) 
@@ -46,8 +45,9 @@ int main(int argc, char** argv)
 
         if (operacao=="SUC")
         {
-            std::cout << "SUC is WIP!\n";
-            std::cout << std::numeric_limits<double>::infinity() << std::endl;
+            // std::cout << "SUC is WIP!\n";
+            // std::cout << std::numeric_limits<double>::infinity() << std::endl;
+            std::cout << rbt.findSuccessor(valor) << "\n";
         }
         else if(operacao=="INC")
         {
@@ -83,7 +83,10 @@ int main(int argc, char** argv)
         else if(operacao=="IMP")
         {
             std::cout << "IMP is WIP!\n";
-            rbt.traversal();
+            std::ofstream output;
+            output.open("../out.txt",std::ofstream::app);
+            rbt.printTreeWithDepthAndColor(output);
+            output.close();
         }
         else 
         {
