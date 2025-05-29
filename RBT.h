@@ -266,6 +266,11 @@ public:
         Node* node = searchHelper(root, data);
         if (node != NIL) deleteNode(node);
         current_ver++;
+        current_ver++;
+        for(int i=current_ver;i<100;i++)
+        {
+            versions[i] = root;
+        }
     }
 
     double findSuccessor(int x) {
