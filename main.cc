@@ -78,6 +78,7 @@ int main(int argc, char** argv)
             //     clearArq.close();
 
             // }
+            rbt.remove(valor);
             std::cout << "REM is WIP!\n";
         }
         else if(operacao=="IMP")

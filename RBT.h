@@ -3,19 +3,35 @@
 #include <string>
 #include <limits>
 
-struct Node {
-    int data;
-    std::string color;
-    Node *left, *right, *parent;
+class Node {
+    public:
+        int data;
+        std::string color;
+        Node *left, *right, *parent;
 
-    Node(int data)
-        : data(data), color("R"), left(nullptr), right(nullptr), parent(nullptr) {}
+        Node(int data) : data(data), color("R"), left(nullptr), right(nullptr), parent(nullptr) 
+        {
+
+        }
+
+        Node(Node& oldNode)
+        {
+            data = oldNode.data;
+            color = oldNode.color;
+
+            left = oldNode.left;
+            right = oldNode.right;
+            parent = oldNode.parent;
+        }
 };
 
 class RedBlackTree {
 private:
     Node* root;
     Node* NIL;
+    int current_ver = 0;
+    Node* versions[100];
+    
 
     void leftRotate(Node* x) {
         Node* y = x->right;
@@ -80,6 +96,105 @@ private:
         root->color = "N";
     }
 
+    void fixDelete(Node* x) {
+        while (x != root && x->color == "N") {
+            if (x == x->parent->left) {
+                Node* w = x->parent->right;
+                if (w->color == "R") {
+                    w->color = "N";
+                    x->parent->color = "R";
+                    leftRotate(x->parent);
+                    w = x->parent->right;
+                }
+                if (w->left->color == "N" && w->right->color == "N") {
+                    w->color = "R";
+                    x = x->parent;
+                } else {
+                    if (w->right->color == "N") {
+                        w->left->color = "N";
+                        w->color = "R";
+                        rightRotate(w);
+                        w = x->parent->right;
+                    }
+                    w->color = x->parent->color;
+                    x->parent->color = "N";
+                    w->right->color = "N";
+                    leftRotate(x->parent);
+                    x = root;
+                }
+            } else {
+                Node* w = x->parent->left;
+                if (w->color == "R") {
+                    w->color = "N";
+                    x->parent->color = "R";
+                    rightRotate(x->parent);
+                    w = x->parent->left;
+                }
+                if (w->right->color == "N" && w->left->color == "N") {
+                    w->color = "R";
+                    x = x->parent;
+                } else {
+                    if (w->left->color == "N") {
+                        w->right->color = "N";
+                        w->color = "R";
+                        leftRotate(w);
+                        w = x->parent->left;
+                    }
+                    w->color = x->parent->color;
+                    x->parent->color = "N";
+                    w->left->color = "N";
+                    rightRotate(x->parent);
+                    x = root;
+                }
+            }
+        }
+        x->color = "N";
+    }
+
+    void transplant(Node* u, Node* v) {
+        if (u->parent == nullptr) root = v;
+        else if (u == u->parent->left) u->parent->left = v;
+        else u->parent->right = v;
+        v->parent = u->parent;
+    }
+
+    Node* minimum(Node* node) {
+        while (node->left != NIL) node = node->left;
+        return node;
+    }
+
+    void deleteNode(Node* z) {
+        Node* y = z;
+        Node* x;
+        std::string y_original_color = y->color;
+        if (z->left == NIL) {
+            x = z->right;
+            transplant(z, z->right);
+        } else if (z->right == NIL) {
+            x = z->left;
+            transplant(z, z->left);
+        } else {
+            y = minimum(z->right);
+            y_original_color = y->color;
+            x = y->right;
+            if (y->parent == z) {
+                x->parent = y;
+            } else {
+                transplant(y, y->right);
+                y->right = z->right;
+                y->right->parent = y;
+            }
+            transplant(z, y);
+            y->left = z->left;
+            y->left->parent = y;
+            y->color = z->color;
+        }
+        if (y_original_color == "N") {
+            fixDelete(x);
+        }
+        delete z;
+    }
+
     void inOrderHelper(Node* node, int depth, std::ostream& out) {
         if (node != NIL) {
             inOrderHelper(node->left, depth + 1, out);
@@ -96,13 +211,19 @@ private:
 
 public:
     RedBlackTree() {
-        NIL = new Node(0);
+        NIL = new Node(-1);
         NIL->color = "N";
         NIL->left = NIL->right = NIL;
         root = NIL;
+        std::fill_n(versions, 100, NIL);
     }
 
     void insert(int data) {
+        if (current_ver == 99) {
+            std::cout << "limite de versões atingido \n";
+            return;
+        }
+
         Node* new_node = new Node(data);
         new_node->left = NIL;
         new_node->right = NIL;
@@ -129,6 +250,22 @@ public:
         if (new_node->parent->parent == nullptr) return;
 
         fixInsert(new_node);
+        current_ver++;
+        for(int i=current_ver;i<100;i++)
+        {
+            versions[i] = root;
+        }
+    }
+
+    void remove(int data) {
+        if (current_ver == 99) {
+            std::cout << "limite de versões atingido \n";
+            return;
+        }
+
+        Node* node = searchHelper(root, data);
+        if (node != NIL) deleteNode(node);
+        current_ver++;
     }
 
     double findSuccessor(int x) {
@@ -146,6 +283,9 @@ public:
     }
 
     void printTreeWithDepthAndColor(std::ostream& out) {
+        // std::cout << NIL->data << "\n";
+        std::cout << versions[current_ver]->data << "\n";
+        out << "IMP " << current_ver << " \n";
         inOrderHelper(root, 0, out);
         out << "\n";
     }
