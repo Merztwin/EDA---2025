@@ -1,0 +1,20 @@
+SUC 6
+SUC WIP: Falta definir versão
+inf
+
+IMP 5
+IMP WIP: Falta definir versão
+
+IMP 5
+IMP WIP: Falta definir versão
+10,0,N 
+IMP 5
+IMP WIP: Falta definir versão
+10,1,R 20,0,N 30,1,R 
+SUC 6
+SUC WIP: Falta definir versão
+10
+
+IMP 5
+IMP WIP: Falta definir versão
+10,1,N 15,2,R 20,0,N 30,1,N 

@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <limits>
@@ -36,7 +37,7 @@ private:
     void leftRotate(Node* x) {
         Node* y = x->right;
         x->right = y->left;
-        if (y->left != NIL) y->left->parent = x;
+        if (y->left->data != -1) y->left->parent = x;
         y->parent = x->parent;
         if (x->parent == nullptr) root = y;
         else if (x == x->parent->left) x->parent->left = y;
@@ -48,7 +49,7 @@ private:
     void rightRotate(Node* x) {
         Node* y = x->left;
         x->left = y->right;
-        if (y->right != NIL) y->right->parent = x;
+        if (y->right->data != -1) y->right->parent = x;
         y->parent = x->parent;
         if (x->parent == nullptr) root = y;
         else if (x == x->parent->right) x->parent->right = y;
@@ -60,7 +61,9 @@ private:
     void fixInsert(Node* k) {
         while (k != root && k->parent->color == "R") {
             if (k->parent == k->parent->parent->left) {
-                Node* u = k->parent->parent->right;
+                Node* u = new Node(*k->parent->parent->right);
+                k->parent->parent->right = u;
+
                 if (u->color == "R") {
                     k->parent->color = "N";
                     u->color = "N";
@@ -76,7 +79,9 @@ private:
                     rightRotate(k->parent->parent);
                 }
             } else {
-                Node* u = k->parent->parent->left;
+                Node* u = new Node(*k->parent->parent->left);
+                k->parent->parent->left = u;
+
                 if (u->color == "R") {
                     k->parent->color = "N";
                     u->color = "N";
@@ -159,7 +164,7 @@ private:
     }
 
     Node* minimum(Node* node) {
-        while (node->left != NIL) node = node->left;
+        while (node->left->data != -1) node = node->left;
         return node;
     }
 
@@ -196,7 +201,7 @@ private:
     }
 
     void inOrderHelper(Node* node, int depth, std::ostream& out) {
-        if (node != NIL) {
+        if (node->data != -1) {
             inOrderHelper(node->left, depth + 1, out);
             out << node->data << "," << depth << "," << node->color[0] << " ";
             inOrderHelper(node->right, depth + 1, out);
@@ -207,6 +212,13 @@ private:
         if (node == NIL || data == node->data) return node;
         if (data < node->data) return searchHelper(node->left, data);
         return searchHelper(node->right, data);
+    }
+
+    Node* findRoot(Node* current) {
+       while (current->parent != nullptr) {
+            current = current->parent;
+        }
+        return current;
     }
 
 public:
@@ -224,37 +236,89 @@ public:
             return;
         }
 
+        current_ver++;
         Node* new_node = new Node(data);
         new_node->left = NIL;
         new_node->right = NIL;
 
         Node* parent = nullptr;
-        Node* current = root;
+        // Node* current = root;
 
-        while (current != NIL) {
-            parent = current;
-            if (new_node->data < current->data) current = current->left;
-            else current = current->right;
+        Node* current;
+        if (root != NIL) {
+            current = new Node(*root);
+            current->parent = nullptr;
+        }
+        else {
+            current = root;
         }
 
+        while (current->data != -1) {
+            parent = current;
+
+            if (new_node->data < current->data) {
+                // current = current->left;
+
+                Node* mod_left = new Node(*current->left);
+                mod_left->parent = current;
+                current->left = mod_left;
+                current = current->left;
+                // if(current->left != NIL) {
+                //     Node* mod_left = new Node(*current->left);
+                //     mod_left->parent = current;
+                //     current = mod_left;
+                // }
+                // else {
+                //     current = current->left;
+                // }
+
+            }
+            else {
+                // current = current->right;
+                Node* mod_right = new Node(*current->right);
+                mod_right->parent = current;
+                current->right = mod_right;
+                current = current->right;
+                // if(current->right != NIL) {
+                //     Node* mod_right = new Node(*current->right);
+                //     mod_right->parent = current;
+                //     current = mod_right;
+                // }
+                // else {
+                //     current = current->right;
+                // }
+
+            }
+        }
+
+        // std::cout << parent->data << "\n";
         new_node->parent = parent;
-        if (parent == nullptr) root = new_node;
-        else if (new_node->data < parent->data) parent->left = new_node;
-        else parent->right = new_node;
+        if (parent == nullptr) {
+            root = new_node;
+        }
+        else if (new_node->data < parent->data) {
+            parent->left = new_node;
+        }
+        else {
+            parent->right = new_node;
+        }
 
         if (new_node->parent == nullptr) {
             new_node->color = "N";
+            versions[current_ver] = root;
             return;
         }
 
-        if (new_node->parent->parent == nullptr) return;
+        if (new_node->parent->parent == nullptr) {
 
-        fixInsert(new_node);
-        current_ver++;
-        for(int i=current_ver;i<100;i++)
-        {
-            versions[i] = root;
+            root = findRoot(new_node);
+            versions[current_ver] = root;
+            return;
         }
+
+        root = findRoot(new_node);
+        fixInsert(new_node);
+        versions[current_ver] = root;
     }
 
     void remove(int data) {
@@ -265,18 +329,20 @@ public:
 
         Node* node = searchHelper(root, data);
         if (node != NIL) deleteNode(node);
-        current_ver++;
-        current_ver++;
-        for(int i=current_ver;i<100;i++)
-        {
-            versions[i] = root;
-        }
+        // current_ver++;
+        // for(int i=current_ver;i<100;i++)
+        // {
+        //     versions[i] = root;
+        // }
     }
 
-    double findSuccessor(int x) {
-        Node* current = root;
+    void findSuccessor(std::ostream& out, int x, int rbtVersion) {
+        Node* current;
+        if (rbtVersion > current_ver) current = versions[current_ver];
+        else current = versions[rbtVersion];
+
         Node* successor = nullptr;
-        while (current != NIL) {
+        while (current->data != -1) {
             if (current->data > x) {
                 successor = current;
                 current = current->left;
@@ -284,15 +350,17 @@ public:
                 current = current->right;
             }
         }
-        return (successor != nullptr) ? successor->data : std::numeric_limits<double>::infinity();
+        out << ((successor != nullptr) ? std::to_string(successor->data) : "inf") << "\n\n";
     }
 
-    void printTreeWithDepthAndColor(std::ostream& out) {
-        // std::cout << NIL->data << "\n";
-        std::cout << versions[current_ver]->data << "\n";
-        out << "IMP " << current_ver << " \n";
-        inOrderHelper(root, 0, out);
-        out << "\n";
+    void printTreeWithDepthAndColor(std::ostream& out, int rbtVersion) {
+        Node* current;
+        if (rbtVersion > current_ver) current = versions[current_ver];
+        else current = versions[rbtVersion];
+        out << "IMP " << rbtVersion << " \n";
+        if (current->data==-1) out << "NULL";
+        inOrderHelper(current, 0, out);
+        out << "\n\n";
     }
 
     Node* getRoot() { return root; }
