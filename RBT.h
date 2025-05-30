@@ -265,7 +265,7 @@ class RedBlackTree
             }
 
             if (y_original_color == N) fixDelete(x);
-            delete z;
+            // delete z;
         }
 
         void inOrderHelper(Node* node, int depth, std::ostream& out)
@@ -336,8 +336,10 @@ class RedBlackTree
             {
                 parent = current;
 
-                if (newNode->data < current->data)
+                if ((newNode->data < current->data))
                 {
+                    if(current->left == NIL) break;
+
                     Node* mod_left = new Node(*current->left);
                     mod_left->parent = current;
 
@@ -346,6 +348,8 @@ class RedBlackTree
                 }
                 else
                 {
+                    if(current->right == NIL) break;
+
                     Node* mod_right = new Node(*current->right);
                     mod_right->parent = current;
 
@@ -397,21 +401,13 @@ class RedBlackTree
             Node* nodeRem = searchHelper(root, data);
             if (nodeRem != NIL) 
             {
-                Node* parent = nullptr;
-                Node* current;
+                //WIP
+                Node* current = new Node(*root);
+                current->parent = nullptr;
 
-                if (root != NIL)
+                while (current->data != data)
                 {
-                    current = new Node(*root);
-                    current->parent = nullptr;
-                }
-                else current = root;
-
-                while (current->data != -1)
-                {
-                    parent = current;
-
-                    if (nodeRem->data < current->data)
+                    if (data < current->data)
                     {
                         Node* mod_left = new Node(*current->left);
                         mod_left->parent = current;
@@ -429,8 +425,8 @@ class RedBlackTree
                     }
                 }
 
-                nodeRem->parent = parent;
-                deleteNode(nodeRem);
+                root = findRoot(current);
+                deleteNode(current);
             }
 
             current_ver++;
@@ -464,7 +460,7 @@ class RedBlackTree
             if (rbtVersion > current_ver) current = versions[current_ver];
             else current = versions[rbtVersion];
 
-            out << "IMP " << rbtVersion << " \n";
+            out << "IMP " << rbtVersion << "\n";
             if (current->data==-1) out << "NULL";
 
             inOrderHelper(current, 0, out);
