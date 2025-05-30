@@ -265,7 +265,7 @@ class RedBlackTree
             }
 
             if (y_original_color == N) fixDelete(x);
-            // delete z;
+            delete z;
         }
 
         void inOrderHelper(Node* node, int depth, std::ostream& out)
