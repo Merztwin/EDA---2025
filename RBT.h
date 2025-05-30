@@ -245,7 +245,8 @@ class RedBlackTree
             }
             else
             {
-                y = minimum(z->right);
+                //Erro aqui
+                y = (minimum(z->right));
                 y_original_color = y->color;
                 x = y->right;
 
