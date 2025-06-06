@@ -138,9 +138,9 @@ class RedBlackTree
         {
             while (x != root && x->color == N)
             {
-                if (x == x->parent->left)
+                if (x->data == x->parent->left->data)
                 {
-                    Node* w = x->parent->right;
+                    Node* w = new Node(*x->parent->right);
                     if (w->color == R)
                     {
                         w->color = N;
@@ -175,7 +175,7 @@ class RedBlackTree
                 }
                 else
                 {
-                    Node* w = x->parent->left;
+                    Node* w = new Node(*x->parent->left);
                     if (w->color == R)
                     {
                         w->color = N;
@@ -215,7 +215,7 @@ class RedBlackTree
         void transplant(Node* u, Node* v)
         {
             if (u->parent == nullptr) root = v;
-            else if (u == u->parent->left) u->parent->left = v;
+            else if (u->data == u->parent->left->data) u->parent->left = v;
             else u->parent->right = v;
 
             v->parent = u->parent;
@@ -246,11 +246,26 @@ class RedBlackTree
             else
             {
                 //Erro aqui
-                y = (minimum(z->right));
-                y_original_color = y->color;
-                x = y->right;
+                y = new Node(*z->right);
+                z->right = y;
 
-                if (y->parent == z) x->parent = y;
+                // Node
+                while (y->left->data != -1)
+                {
+                    Node* mod_left = new Node(*y->left);
+                    mod_left->parent = y;
+
+                    y->left = mod_left;
+                    y = y->left;
+                }
+
+                Node* parent =  y->parent;
+                y_original_color = y->color;
+
+                x = new Node(*y->right);
+                x->parent = y;
+
+                if (y->parent->data == z->data) x->parent = y;
                 else 
                 {
                     transplant(y, y->right);

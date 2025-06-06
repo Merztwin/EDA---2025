@@ -9,17 +9,20 @@
 #include <string>
 #include <vector>
 
-std::vector<std::string> split(std::string& s, std::string& delimiter) {
+std::vector<std::string> split(std::string& s, std::string& delimiter)
+{
     std::vector<std::string> tokens;
     size_t pos = 0;
     std::string token;
-    while ((pos = s.find(delimiter)) != std::string::npos) {
+
+    while ((pos = s.find(delimiter)) != std::string::npos)
+    {
         token = s.substr(0, pos);
         tokens.push_back(token);
         s.erase(0, pos + delimiter.length());
     }
+    
     tokens.push_back(s);
-
     return tokens;
 }
 
@@ -74,36 +77,11 @@ int main(int argc, char** argv)
         }
         else if(operacao=="REM")
         {
-            // if(rbt.RemoveNoArvBMais(valor))
-            // {
-            //     std::string line;
-
-            //     int numberOperations = 0;
-            //     std::string nomeArquivo = std::to_string(valor)+".txt";
-            //     std::ifstream textStream(nomeArquivo);
-
-            //     std::ofstream output;
-            //     output.open("out.txt",std::ofstream::app);
-
-            //     while (getline(textStream, line)) 
-            //     {
-            //         numberOperations++;
-            //     }
-            //     output << "REM:" << numberOperations << std::endl;
-            //     output.close();
-
-            //     std::ofstream clearArq;
-            //     clearArq.open(nomeArquivo, std::ofstream::out | std::ofstream::trunc);
-            //     clearArq.close();
-
-            // }
             valor = std::stoi(auxString);
             rbt.remove(valor);
-            // std::cout << "REM is WIP!\n";
         }
         else if(operacao=="IMP")
         {
-            // std::cout << "IMP is WIP!\n";
             rbtVer = std::stoi(auxString);
             rbt.printTreeWithDepthAndColor(output, rbtVer);
         }
