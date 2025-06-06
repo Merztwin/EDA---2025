@@ -7,6 +7,14 @@
 class RedBlackTree
 {
     private:
+        enum State
+        {
+            notModified,
+            leftModified,
+            rightModified,
+            nilState
+        };
+
         enum Color : char
         {
             R = 'R', 
@@ -17,10 +25,12 @@ class RedBlackTree
         struct Node
         {
             int data;
+            int timestamp = 0;
             Color color;
-            Node *left, *right, *parent;
+            State state = notModified;
+            Node *left, *right, *parent, *nilPointer;
 
-            Node(int data) : data(data), color(R), left(nullptr), right(nullptr), parent(nullptr) {}
+            Node(int data) : data(data), color(R), left(nullptr), right(nullptr), parent(nullptr), nilPointer(nullptr) {}
 
             Node(Node& oldNode)
             {
@@ -41,12 +51,18 @@ class RedBlackTree
         int current_ver = 0;
 
 
+        Node* copyNode(Node* oldNode)
+        {
+            if(oldNode->state != nilState) return new Node(*oldNode);
+            else return oldNode;
+        }
+
         void leftRotate(Node* x)
         {
             Node* y = x->right;
             x->right = y->left;
 
-            if (y->left->data != -1) y->left->parent = x;
+            if (y->left->state != nilState) y->left->parent = x;
             y->parent = x->parent;
 
             if (x->parent == nullptr) root = y;
@@ -62,7 +78,7 @@ class RedBlackTree
             Node* y = x->left;
             x->left = y->right;
 
-            if (y->right->data != -1) y->right->parent = x;
+            if (y->right->state != nilState) y->right->parent = x;
             y->parent = x->parent;
 
             if (x->parent == nullptr) root = y;
@@ -79,7 +95,7 @@ class RedBlackTree
             {
                 if (k->parent == k->parent->parent->left)
                 {
-                    Node* u = new Node(*k->parent->parent->right);
+                    Node* u = copyNode(k->parent->parent->right);
                     k->parent->parent->right = u;
 
                     if (u->color == R)
@@ -105,7 +121,7 @@ class RedBlackTree
                 }
                 else
                 {
-                    Node* u = new Node(*k->parent->parent->left);
+                    Node* u = copyNode(k->parent->parent->left);
                     k->parent->parent->left = u;
 
                     if (u->color == R)
@@ -140,7 +156,7 @@ class RedBlackTree
             {
                 if (x->data == x->parent->left->data)
                 {
-                    Node* w = new Node(*x->parent->right);
+                    Node* w = copyNode(x->parent->right);
                     if (w->color == R)
                     {
                         w->color = N;
@@ -175,7 +191,7 @@ class RedBlackTree
                 }
                 else
                 {
-                    Node* w = new Node(*x->parent->left);
+                    Node* w = copyNode(x->parent->left);
                     if (w->color == R)
                     {
                         w->color = N;
@@ -223,7 +239,7 @@ class RedBlackTree
 
         Node* minimum(Node* node)
         {
-            while (node->left->data != -1) node = node->left;
+            while (node->left->state != nilState) node = node->left;
             return node;
         }
 
@@ -233,7 +249,7 @@ class RedBlackTree
             Node* x;
 
             Color y_original_color = y->color;
-            if (z->left == NIL)
+            if (z->left->state == nilState)
             {
                 x = z->right;
                 transplant(z, z->right);
@@ -246,13 +262,13 @@ class RedBlackTree
             else
             {
                 //Erro aqui
-                y = new Node(*z->right);
+                y = copyNode(z->right);
                 z->right = y;
 
                 // Node
-                while (y->left->data != -1)
+                while (y->left->state != nilState)
                 {
-                    Node* mod_left = new Node(*y->left);
+                    Node* mod_left = copyNode(y->left);
                     mod_left->parent = y;
 
                     y->left = mod_left;
@@ -262,7 +278,7 @@ class RedBlackTree
                 Node* parent =  y->parent;
                 y_original_color = y->color;
 
-                x = new Node(*y->right);
+                x = copyNode(y->right);
                 x->parent = y;
 
                 if (y->parent->data == z->data) x->parent = y;
@@ -286,14 +302,14 @@ class RedBlackTree
 
         void inOrderHelper(Node* node, int depth, std::ostream& out)
         {
-            if (node->data != -1)
+            if (node->state != nilState)
             {
                 inOrderHelper(node->left, depth + 1, out);
 
-                if (node->left->data != -1) out << " ";
+                if (node->left->state != nilState) out << " ";
                 out << node->data << "," << depth << "," << node->color;
 
-                if (node->right->data != -1) out << " ";
+                if (node->right->state != nilState) out << " ";
                 inOrderHelper(node->right, depth + 1, out);
             }
         }
@@ -318,7 +334,8 @@ class RedBlackTree
             NIL = new Node(-1);
 
             NIL->color = N;
-            NIL->left = NIL->right = NIL;
+            NIL->left = NIL->right = NIL->nilPointer = NIL;
+            NIL->state = nilState;
 
             root = NIL;
             std::fill_n(versions, 100, NIL);
@@ -333,30 +350,76 @@ class RedBlackTree
             }
 
             current_ver++;
-            Node* newNode = new Node(data);
+            if(searchHelper(root, data) != NIL)
+            {
+                std::cout << "Chave já existe\n";
+                versions[current_ver] = root;
+                return;
+            }
 
-            newNode->left = NIL;
-            newNode->right = NIL;
+            Node* newNode = new Node(data);
+            newNode->left = newNode->right = newNode->nilPointer = NIL;
 
             Node* parent = nullptr;
-            Node* current;
+            Node* current = root;
+
+            while (current->state != nilState)
+            {
+                parent = current;
+                if (newNode->data < current->data) current = current->left;
+                else current = current->right;
+            }
+
+            // if((parent->color == N) && (parent->state == notModified))
+            // {
+            //     newNode->parent = parent;
+
+            //     if (parent == nullptr)
+            //     {
+            //         root = newNode;
+            //     }
+            //     else if (newNode->data < parent->data)
+            //     {
+            //         parent->left = newNode;
+            //         parent->state = leftModified;
+            //     }
+            //     else
+            //     {
+            //         parent->right = newNode;
+            //         parent->state = rightModified;
+            //     }
+
+            //     if (newNode->parent == nullptr)
+            //     {
+            //         newNode->color = N;
+            //         versions[current_ver] = root;
+            //         return;
+            //     }
+
+            //     if (newNode->parent->parent == nullptr)
+            //     {
+            //         root = findRoot(newNode);
+            //         versions[current_ver] = root;
+            //         return;
+            //     }
+            // }
 
             if (root != NIL)
             {
-                current = new Node(*root);
+                current = copyNode(root);
                 current->parent = nullptr;
             }
-            else current = root;
+            // else current = root;
 
-            while (current->data != -1)
+            while (current->state != nilState)
             {
                 parent = current;
 
                 if ((newNode->data < current->data))
                 {
-                    if(current->left == NIL) break;
+                    if(current->left->state == nilState) break;
 
-                    Node* mod_left = new Node(*current->left);
+                    Node* mod_left = copyNode(current->left);
                     mod_left->parent = current;
 
                     current->left = mod_left;
@@ -364,9 +427,9 @@ class RedBlackTree
                 }
                 else
                 {
-                    if(current->right == NIL) break;
+                    if(current->right->state == nilState) break;
 
-                    Node* mod_right = new Node(*current->right);
+                    Node* mod_right = copyNode(current->right);
                     mod_right->parent = current;
 
                     current->right = mod_right;
@@ -407,7 +470,7 @@ class RedBlackTree
                 return;
             }
 
-            if (root->data == -1)
+            if (root->state == nilState)
             {
                 current_ver++;
                 versions[current_ver] = root;
@@ -418,14 +481,14 @@ class RedBlackTree
             if (nodeRem != NIL) 
             {
                 //WIP
-                Node* current = new Node(*root);
+                Node* current = copyNode(root);
                 current->parent = nullptr;
 
                 while (current->data != data)
                 {
                     if (data < current->data)
                     {
-                        Node* mod_left = new Node(*current->left);
+                        Node* mod_left = copyNode(current->left);
                         mod_left->parent = current;
 
                         current->left = mod_left;
@@ -433,7 +496,7 @@ class RedBlackTree
                     }
                     else
                     {
-                        Node* mod_right = new Node(*current->right);
+                        Node* mod_right = copyNode(current->right);
                         mod_right->parent = current;
 
                         current->right = mod_right;
@@ -456,7 +519,7 @@ class RedBlackTree
             else current = versions[rbtVersion];
 
             Node* successor = nullptr;
-            while (current->data != -1)
+            while (current->state != nilState)
             {
                 if (current->data > x)
                 {
@@ -477,7 +540,7 @@ class RedBlackTree
             else current = versions[rbtVersion];
 
             out << "IMP " << rbtVersion << "\n";
-            if (current->data==-1) out << "NULL";
+            if (current->state == nilState) out << "NULL";
 
             inOrderHelper(current, 0, out);
             out << "\n\n";
