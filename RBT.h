@@ -25,7 +25,6 @@ class RedBlackTree
         struct Node
         {
             int data;
-            int timestamp = 0;
             Color color;
             State state = notModified;
             Node *left, *right, *parent, *nilPointer;
@@ -48,12 +47,12 @@ class RedBlackTree
         Node* NIL;
 
         Node* versions[100];
-        int current_ver = 0;
+        int currentVer = 0;
 
 
         Node* copyNode(Node* oldNode)
         {
-            if(oldNode->state != nilState) return new Node(*oldNode);
+            if (oldNode->state != nilState) return new Node(*oldNode);
             else return oldNode;
         }
 
@@ -261,11 +260,9 @@ class RedBlackTree
             }
             else
             {
-                //Erro aqui
                 y = copyNode(z->right);
                 z->right = y;
 
-                // Node
                 while (y->left->state != nilState)
                 {
                     Node* mod_left = copyNode(y->left);
@@ -302,14 +299,14 @@ class RedBlackTree
 
         void inOrderHelper(Node* node, int depth, std::ostream& out)
         {
-            if (node->state != nilState)
+            if (node->data != -1)
             {
                 inOrderHelper(node->left, depth + 1, out);
 
-                if (node->left->state != nilState) out << " ";
+                if (node->left->data != -1) out << " ";
                 out << node->data << "," << depth << "," << node->color;
 
-                if (node->right->state != nilState) out << " ";
+                if (node->right->data != -1) out << " ";
                 inOrderHelper(node->right, depth + 1, out);
             }
         }
@@ -343,17 +340,17 @@ class RedBlackTree
 
         void insert(int data)
         {
-            if (current_ver == 99) 
+            if (currentVer == 99) 
             {
                 std::cout << "limite de versões atingido\n";
                 return;
             }
 
-            current_ver++;
-            if(searchHelper(root, data) != NIL)
+            currentVer++;
+            if (searchHelper(root, data) != NIL)
             {
                 std::cout << "Chave já existe\n";
-                versions[current_ver] = root;
+                versions[currentVer] = root;
                 return;
             }
 
@@ -370,46 +367,19 @@ class RedBlackTree
                 else current = current->right;
             }
 
-            // if((parent->color == N) && (parent->state == notModified))
-            // {
-            //     newNode->parent = parent;
-
-            //     if (parent == nullptr)
-            //     {
-            //         root = newNode;
-            //     }
-            //     else if (newNode->data < parent->data)
-            //     {
-            //         parent->left = newNode;
-            //         parent->state = leftModified;
-            //     }
-            //     else
-            //     {
-            //         parent->right = newNode;
-            //         parent->state = rightModified;
-            //     }
-
-            //     if (newNode->parent == nullptr)
-            //     {
-            //         newNode->color = N;
-            //         versions[current_ver] = root;
-            //         return;
-            //     }
-
-            //     if (newNode->parent->parent == nullptr)
-            //     {
-            //         root = findRoot(newNode);
-            //         versions[current_ver] = root;
-            //         return;
-            //     }
-            // }
+            if (parent == nullptr)
+            {
+                root = newNode;
+                newNode->color = N;
+                versions[currentVer] = root;
+                return;
+            }
 
             if (root != NIL)
             {
                 current = copyNode(root);
                 current->parent = nullptr;
             }
-            // else current = root;
 
             while (current->state != nilState)
             {
@@ -417,7 +387,7 @@ class RedBlackTree
 
                 if ((newNode->data < current->data))
                 {
-                    if(current->left->state == nilState) break;
+                    if (current->left->state == nilState) break;
 
                     Node* mod_left = copyNode(current->left);
                     mod_left->parent = current;
@@ -427,7 +397,7 @@ class RedBlackTree
                 }
                 else
                 {
-                    if(current->right->state == nilState) break;
+                    if (current->right->state == nilState) break;
 
                     Node* mod_right = copyNode(current->right);
                     mod_right->parent = current;
@@ -439,32 +409,25 @@ class RedBlackTree
 
             newNode->parent = parent;
 
-            if (parent == nullptr) root = newNode;
-            else if (newNode->data < parent->data) parent->left = newNode;
+            if (newNode->data < parent->data) parent->left = newNode;
             else parent->right = newNode;
-
-            if (newNode->parent == nullptr)
-            {
-                newNode->color = N;
-                versions[current_ver] = root;
-                return;
-            }
 
             if (newNode->parent->parent == nullptr)
             {
                 root = findRoot(newNode);
-                versions[current_ver] = root;
+                versions[currentVer] = root;
                 return;
             }
 
             root = findRoot(newNode);
             fixInsert(newNode);
-            versions[current_ver] = root;
+            versions[currentVer] = root;
+            root->state = leftModified;
         }
 
         void remove(int data)
         {
-            if (current_ver == 99)
+            if (currentVer == 99)
             {
                 std::cout << "limite de versões atingido\n";
                 return;
@@ -472,15 +435,14 @@ class RedBlackTree
 
             if (root->state == nilState)
             {
-                current_ver++;
-                versions[current_ver] = root;
+                currentVer++;
+                versions[currentVer] = root;
                 return;
             }
 
             Node* nodeRem = searchHelper(root, data);
             if (nodeRem != NIL) 
             {
-                //WIP
                 Node* current = copyNode(root);
                 current->parent = nullptr;
 
@@ -508,14 +470,14 @@ class RedBlackTree
                 deleteNode(current);
             }
 
-            current_ver++;
-            versions[current_ver] = root;
+            currentVer++;
+            versions[currentVer] = root;
         }
 
         void findSuccessor(std::ostream& out, int x, int rbtVersion)
         {
             Node* current;
-            if (rbtVersion > current_ver) current = versions[current_ver];
+            if (rbtVersion > currentVer) current = versions[currentVer];
             else current = versions[rbtVersion];
 
             Node* successor = nullptr;
@@ -529,21 +491,25 @@ class RedBlackTree
                 else current = current->right;
             }
             
-            out << ((successor != nullptr) ? std::to_string(successor->data) : "inf") << "\n\n";
+            out << ((successor != nullptr) ? std::to_string(successor->data) : "+inf") << "\n";
         }
 
         void printTreeWithDepthAndColor(std::ostream& out, int rbtVersion)
         {
             Node* current;
 
-            if (rbtVersion > current_ver) current = versions[current_ver];
+            if (rbtVersion > currentVer) current = versions[currentVer];
             else current = versions[rbtVersion];
 
             out << "IMP " << rbtVersion << "\n";
-            if (current->state == nilState) out << "NULL";
+            if (current->state == nilState)
+            {
+                out << "NULL\n";
+                return;
+            }
 
             inOrderHelper(current, 0, out);
-            out << "\n\n";
+            out << "\n";
         }
 
         Node* getRoot() { return root; }
