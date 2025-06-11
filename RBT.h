@@ -439,13 +439,19 @@ class RedBlackTree
             current = parent;
 
             
+            // if ((parent->color == R) && (current->parent != nullptr)) current = current->parent;
             while ((current->state != notModified) || (current->color == R))
             {
                 if (current->parent == nullptr) break;
                 current = current->parent;
             }
 
-            if ((parent->color == R) && (current->parent != nullptr)) current = current->parent;
+            //Imperfeito, talvez não precisasse procurar por nó negro antes
+            if ((parent->color == R) && (current->parent != nullptr))
+            {
+                current = current->parent;
+                while ((current->state != notModified) && (current->parent != nullptr)) current = current->parent;
+            }
 
             if (current->parent == nullptr)
             {
@@ -459,14 +465,12 @@ class RedBlackTree
                     current->state = leftModified;
                     current->timestamp = currentVer;
                     current->oldPointer = current->left;
-                    // current = current->left;
                 }
                 else
                 {
                     current->state = rightModified;
                     current->timestamp = currentVer;
                     current->oldPointer = current->right;
-                    // current = current->right;
                 }
             }
 
