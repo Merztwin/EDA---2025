@@ -24,6 +24,7 @@ class RedBlackTree
 
         struct Node
         {
+            int timestamp = 0;
             int data;
             Color color;
             State state = notModified;
@@ -39,6 +40,8 @@ class RedBlackTree
                 left = oldNode.left;
                 right = oldNode.right;
                 parent = oldNode.parent;
+                state = notModified;
+                timestamp = 0;
             }
         };
 
@@ -297,17 +300,39 @@ class RedBlackTree
             delete z;
         }
 
-        void inOrderHelper(Node* node, int depth, std::ostream& out)
+        void inOrderHelper(Node* node, int depth, std::ostream& out, int timestamp)
         {
-            if (node->data != -1)
+            if (node->timestamp > timestamp)
             {
-                inOrderHelper(node->left, depth + 1, out);
+                if (node->data != -1)
+                {
+                    if (node->state != leftModified)
+                    {
+                        inOrderHelper(node->left, depth + 1, out, timestamp);
+                        if (node->left->data != -1) out << " ";
+                    }
 
-                if (node->left->data != -1) out << " ";
-                out << node->data << "," << depth << "," << node->color;
+                    out << node->data << "," << depth << "," << node->color;
 
-                if (node->right->data != -1) out << " ";
-                inOrderHelper(node->right, depth + 1, out);
+                    if (node->state != rightModified)
+                    {
+                        if (node->right->data != -1) out << " ";
+                        inOrderHelper(node->right, depth + 1, out, timestamp);
+                    }
+                }
+            }
+            else
+            {
+                if (node->data != -1)
+                {
+                    inOrderHelper(node->left, depth + 1, out, timestamp);
+
+                    if (node->left->data != -1) out << " ";
+                    out << node->data << "," << depth << "," << node->color;
+
+                    if (node->right->data != -1) out << " ";
+                    inOrderHelper(node->right, depth + 1, out, timestamp);
+                }
             }
         }
 
@@ -375,6 +400,28 @@ class RedBlackTree
                 return;
             }
 
+            if ((parent->state == notModified) && (parent->color == N))
+            {
+                if (newNode->data < parent->data)
+                {
+                    parent->state = leftModified;
+                    parent->timestamp = currentVer;
+                    parent->left = newNode;
+                    newNode->parent = parent;
+                }
+                else 
+                {
+                    parent->state = rightModified;
+                    parent->timestamp = currentVer;
+                    parent->right = newNode;
+                    newNode->parent = parent;
+                }
+
+                versions[currentVer] = root;
+                return;
+            }
+
+
             if (root != NIL)
             {
                 current = copyNode(root);
@@ -422,7 +469,6 @@ class RedBlackTree
             root = findRoot(newNode);
             fixInsert(newNode);
             versions[currentVer] = root;
-            root->state = leftModified;
         }
 
         void remove(int data)
@@ -477,18 +523,26 @@ class RedBlackTree
         void findSuccessor(std::ostream& out, int x, int rbtVersion)
         {
             Node* current;
-            if (rbtVersion > currentVer) current = versions[currentVer];
-            else current = versions[rbtVersion];
+            int searchVer = rbtVersion;
+            if (rbtVersion > currentVer) searchVer = currentVer;
 
+            current = versions[searchVer];
             Node* successor = nullptr;
+
             while (current->state != nilState)
             {
-                if (current->data > x)
+
+                if ((current->data > x))
                 {
                     successor = current;
-                    current = current->left;
+                    if ((current->state == leftModified) && (current->timestamp > searchVer)) current = NIL;
+                    else current = current->left;
                 }
-                else current = current->right;
+                else
+                {
+                    if ((current->state == rightModified)  && (current->timestamp > searchVer)) current = NIL;
+                    else current = current->right;
+                }
             }
             
             out << ((successor != nullptr) ? std::to_string(successor->data) : "+inf") << "\n";
@@ -508,7 +562,7 @@ class RedBlackTree
                 return;
             }
 
-            inOrderHelper(current, 0, out);
+            inOrderHelper(current, 0, out, rbtVersion);
             out << "\n";
         }
 
