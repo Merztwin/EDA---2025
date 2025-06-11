@@ -28,9 +28,9 @@ class RedBlackTree
             int data;
             Color color;
             State state = notModified;
-            Node *left, *right, *parent, *nilPointer;
+            Node *left, *right, *parent, *oldPointer;
 
-            Node(int data) : data(data), color(R), left(nullptr), right(nullptr), parent(nullptr), nilPointer(nullptr) {}
+            Node(int data) : data(data), color(R), left(nullptr), right(nullptr), parent(nullptr), oldPointer(nullptr) {}
 
             Node(Node& oldNode)
             {
@@ -40,6 +40,7 @@ class RedBlackTree
                 left = oldNode.left;
                 right = oldNode.right;
                 parent = oldNode.parent;
+                oldPointer = nullptr;
                 state = notModified;
                 timestamp = 0;
             }
@@ -311,6 +312,11 @@ class RedBlackTree
                         inOrderHelper(node->left, depth + 1, out, timestamp);
                         if (node->left->data != -1) out << " ";
                     }
+                    else if (node->oldPointer != nullptr)
+                    {
+                        inOrderHelper(node->oldPointer, depth + 1, out, timestamp);
+                        if (node->oldPointer->data != -1) out << " ";
+                    }
 
                     out << node->data << "," << depth << "," << node->color;
 
@@ -318,6 +324,11 @@ class RedBlackTree
                     {
                         if (node->right->data != -1) out << " ";
                         inOrderHelper(node->right, depth + 1, out, timestamp);
+                    }
+                    else if (node->oldPointer != nullptr)
+                    {
+                        if (node->oldPointer->data != -1) out << " ";
+                        inOrderHelper(node->oldPointer, depth + 1, out, timestamp);
                     }
                 }
             }
@@ -356,7 +367,7 @@ class RedBlackTree
             NIL = new Node(-1);
 
             NIL->color = N;
-            NIL->left = NIL->right = NIL->nilPointer = NIL;
+            NIL->left = NIL->right = NIL;
             NIL->state = nilState;
 
             root = NIL;
@@ -380,11 +391,12 @@ class RedBlackTree
             }
 
             Node* newNode = new Node(data);
-            newNode->left = newNode->right = newNode->nilPointer = NIL;
+            newNode->left = newNode->right = NIL;
 
             Node* parent = nullptr;
             Node* current = root;
 
+            //Procura pai do novo nó
             while (current->state != nilState)
             {
                 parent = current;
@@ -392,6 +404,7 @@ class RedBlackTree
                 else current = current->right;
             }
 
+            //Arvore vazia
             if (parent == nullptr)
             {
                 root = newNode;
@@ -400,6 +413,7 @@ class RedBlackTree
                 return;
             }
 
+            //Pai não modificado
             if ((parent->state == notModified) && (parent->color == N))
             {
                 if (newNode->data < parent->data)
@@ -421,13 +435,42 @@ class RedBlackTree
                 return;
             }
 
+            //Procura raíz da menor subárvore que aceita inserção sem necessidade de nova cópia
+            current = parent;
 
-            if (root != NIL)
+            
+            while ((current->state != notModified) || (current->color == R))
+            {
+                if (current->parent == nullptr) break;
+                current = current->parent;
+            }
+
+            if ((parent->color == R) && (current->parent != nullptr)) current = current->parent;
+
+            if (current->parent == nullptr)
             {
                 current = copyNode(root);
                 current->parent = nullptr;
             }
+            else 
+            {
+                if (newNode->data < current->data)
+                {
+                    current->state = leftModified;
+                    current->timestamp = currentVer;
+                    current->oldPointer = current->left;
+                    // current = current->left;
+                }
+                else
+                {
+                    current->state = rightModified;
+                    current->timestamp = currentVer;
+                    current->oldPointer = current->right;
+                    // current = current->right;
+                }
+            }
 
+            //Node Copying
             while (current->state != nilState)
             {
                 parent = current;
@@ -535,14 +578,16 @@ class RedBlackTree
                 if ((current->data > x))
                 {
                     successor = current;
-                    if ((current->state == leftModified) && (current->timestamp > searchVer)) current = NIL;
+                    if ((current->state == leftModified) && (current->timestamp > searchVer)) current = current->oldPointer;
                     else current = current->left;
                 }
                 else
                 {
-                    if ((current->state == rightModified)  && (current->timestamp > searchVer)) current = NIL;
+                    if ((current->state == rightModified)  && (current->timestamp > searchVer)) current = current->oldPointer;
                     else current = current->right;
                 }
+
+                if (current == nullptr) break;
             }
             
             out << ((successor != nullptr) ? std::to_string(successor->data) : "+inf") << "\n";
