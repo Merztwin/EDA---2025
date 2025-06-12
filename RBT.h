@@ -305,43 +305,43 @@ class RedBlackTree
         {
             if (node->timestamp > timestamp)
             {
-                if (node->data != -1)
+                if (node->state != nilState)
                 {
                     if (node->state != leftModified)
                     {
                         inOrderHelper(node->left, depth + 1, out, timestamp);
-                        if (node->left->data != -1) out << " ";
+                        if (node->left->state != nilState) out << " ";
                     }
                     else if (node->oldPointer != nullptr)
                     {
                         inOrderHelper(node->oldPointer, depth + 1, out, timestamp);
-                        if (node->oldPointer->data != -1) out << " ";
+                        if (node->oldPointer->state != nilState) out << " ";
                     }
 
                     out << node->data << "," << depth << "," << node->color;
 
                     if (node->state != rightModified)
                     {
-                        if (node->right->data != -1) out << " ";
+                        if (node->right->state != nilState) out << " ";
                         inOrderHelper(node->right, depth + 1, out, timestamp);
                     }
                     else if (node->oldPointer != nullptr)
                     {
-                        if (node->oldPointer->data != -1) out << " ";
+                        if (node->oldPointer->state != nilState) out << " ";
                         inOrderHelper(node->oldPointer, depth + 1, out, timestamp);
                     }
                 }
             }
             else
             {
-                if (node->data != -1)
+                if (node->state != nilState)
                 {
                     inOrderHelper(node->left, depth + 1, out, timestamp);
 
-                    if (node->left->data != -1) out << " ";
+                    if (node->left->state != nilState) out << " ";
                     out << node->data << "," << depth << "," << node->color;
 
-                    if (node->right->data != -1) out << " ";
+                    if (node->right->state != nilState) out << " ";
                     inOrderHelper(node->right, depth + 1, out, timestamp);
                 }
             }
@@ -353,6 +353,19 @@ class RedBlackTree
             if (data < node->data) return searchHelper(node->left, data);
 
             return searchHelper(node->right, data);
+        }
+
+        Node* findParent(Node* current, Node* node)
+        {
+            Node* parent = current;
+            while (current->data != node->data)
+            {
+                parent = current;
+                if (node->data < current->data) current = current->left;
+                else current = current->right;
+            }
+
+            return parent;
         }
 
         Node* findRoot(Node* current)
@@ -378,14 +391,14 @@ class RedBlackTree
         {
             if (currentVer == 99) 
             {
-                std::cout << "limite de versões atingido\n";
+                // std::cout << "limite de versões atingido\n";
                 return;
             }
 
             currentVer++;
             if (searchHelper(root, data) != NIL)
             {
-                std::cout << "Chave já existe\n";
+                // std::cout << "Chave já existe\n";
                 versions[currentVer] = root;
                 return;
             }
@@ -443,10 +456,10 @@ class RedBlackTree
                 {
                     if ((current->parent->state == notModified) && (current->color == N)  && (current->parent->color == N))
                     {
-                        current = current->parent;
+                        current = findParent(root, current);
                         break;
                     }
-                    current = current->parent;
+                    current = findParent(root, current);
                 }
             }
             else 
@@ -454,7 +467,7 @@ class RedBlackTree
                 while ((current->state != notModified))
                 {
                     if (current->parent == nullptr) break;
-                    current = current->parent;
+                    current = findParent(root, current);
                 }
             }
 
