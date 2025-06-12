@@ -437,20 +437,25 @@ class RedBlackTree
 
             //Procura raíz da menor subárvore que aceita inserção sem necessidade de nova cópia
             current = parent;
-
-            
-            // if ((parent->color == R) && (current->parent != nullptr)) current = current->parent;
-            while ((current->state != notModified) || (current->color == R))
+            if (parent->color == R)
             {
-                if (current->parent == nullptr) break;
-                current = current->parent;
+                while (current->parent != nullptr)
+                {
+                    if ((current->parent->state == notModified) && (current->color == N)  && (current->parent->color == N))
+                    {
+                        current = current->parent;
+                        break;
+                    }
+                    current = current->parent;
+                }
             }
-
-            //Imperfeito, talvez não precisasse procurar por nó negro antes
-            if ((parent->color == R) && (current->parent != nullptr))
+            else 
             {
-                current = current->parent;
-                while ((current->state != notModified) && (current->parent != nullptr)) current = current->parent;
+                while ((current->state != notModified))
+                {
+                    if (current->parent == nullptr) break;
+                    current = current->parent;
+                }
             }
 
             if (current->parent == nullptr)
